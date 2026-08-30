@@ -55,26 +55,36 @@ const ok = (nome, cond, extra) => {
   });
   ok('3. la segnatura chiude', t3.segnature === 1 && t3.formato === 2 && t3.graffette === 1, t3);
 
-  // 4. il muro: uscire dal foglio finisce la partita
+  // 4. il foglio non ha bordi: si esce da una parte e si rientra dall'altra
   const t4 = await page.evaluate(() => {
     const L = window.__leporello; L.comincia();
-    L.passo(40);               // dritto a destra: prima o poi il bordo arriva
-    return L.stato();
+    const partenza = L.stato().testa.x;
+    L.passo(L.COLS);           // un giro esatto del foglio, dritto a destra
+    const s = L.stato();
+    return { fase: s.fase, causa: s.causa, partenza: partenza, arrivo: s.testa.x, cols: L.COLS };
   });
-  ok('4. il bordo uccide', t4.fase !== 'play' && t4.causa === 'fuori', { fase: t4.fase, causa: t4.causa });
+  ok('4. il bordo fa il giro', t4.fase === 'play' && t4.arrivo === t4.partenza, t4);
 
-  // 5. il registro fa passare dall'altra parte invece di uccidere
+  // 5. in registro si passa attraverso le cordonature
   const t5 = await page.evaluate(() => {
-    const L = window.__leporello; L.comincia();
+    const L = window.__leporello;
+    // senza il campione, la cordonatura ferma
+    L.comincia(); L.formatoA(10);
+    L.passo(25);
+    const senza = L.stato();
+    // con il campione, ci si passa attraverso
+    L.comincia(); L.formatoA(10);
     const s0 = L.stato();
     L.mettiCampione('registro', s0.testa.x + 1, s0.testa.y);
     L.passo(1);
-    const dopoPresa = L.stato();
-    L.passo(40);
-    const s = L.stato();
-    return { effetto: dopoPresa.effetto, fase: s.fase, x: s.testa.x, causa: s.causa };
+    const effetto = L.stato().effetto;
+    L.passo(25);
+    const con = L.stato();
+    return { senzaFase: senza.fase, senzaCausa: senza.causa,
+             effetto: effetto, conFase: con.fase };
   });
-  ok('5. il registro fa il giro', t5.effetto === 'registro' && t5.fase === 'play', t5);
+  ok('5. in registro si attraversa', t5.senzaFase !== 'play' && t5.senzaCausa === 'cordonatura' &&
+      t5.effetto === 'registro' && t5.conFase === 'play', t5);
 
   // 6. il rifilo accorcia
   const t6 = await page.evaluate(() => {
@@ -166,6 +176,18 @@ const ok = (nome, cond, extra) => {
   });
   ok('12. pausa e abbandono', t12.inPausa === 'pause' && t12.abbandonaVisibile &&
       t12.fase === 'over' && t12.causa === 'resa' && t12.schedaAltroGioco && t12.abbandonaNascosto, t12);
+
+  // 12bis. il campione tinge tutta la striscia, anche quello istantaneo
+  const t12b = await page.evaluate(() => {
+    const L = window.__leporello; L.comincia();
+    const prima = L.stato().tinta;
+    const s0 = L.stato();
+    L.mettiCampione('rifilo', s0.testa.x + 1, s0.testa.y);
+    L.passo(1);
+    const dopo = L.stato();
+    return { prima: prima, dopo: dopo.tinta, effetto: dopo.effetto };
+  });
+  ok('12b. il campione tinge la striscia', t12b.prima === null && t12b.dopo === '#F5C400', t12b);
 
   // 13. il ponte verso gli altri giochi
   const t13 = await page.evaluate(() => ({
