@@ -60,7 +60,10 @@
   [hidden]{display:none!important}
   body{margin:0;background:var(--ground);color:var(--paper);font-family:var(--ui);
        -webkit-font-smoothing:antialiased;min-height:100vh;overscroll-behavior:none}
-  .sheet{max-width:1180px;margin:0 auto;padding:22px 24px 40px}
+  /* Il foglio è largo 1400 per fare spazio al campo: la testata, la classifica
+     e il colophon restano a 1180 e allineati fra loro, così a crescere è solo
+     il gioco. */
+  .sheet{max-width:1400px;margin:0 auto;padding:22px 24px 40px}
 
   .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
             flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--rule)}
@@ -79,6 +82,10 @@
 
   .stage{display:flex;gap:22px;align-items:flex-start;justify-content:center;
          padding-top:20px;flex-wrap:wrap}
+  /* Sul monitore le due colonne vanno a filo del foglio, come la testata e la
+     classifica: il campo resta in mezzo, ma niente più mezzo centimetro di
+     scarto fra il bordo del pannello e il bordo della pagina. */
+  @media (min-width:901px){ .stage{justify-content:space-between} }
   .rail{width:210px;display:flex;flex-direction:column;gap:14px;flex:none}
   .panel{background:var(--surface);border:1px solid var(--rule-soft);border-radius:3px;padding:13px 14px}
   .panel-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;
@@ -170,7 +177,7 @@
     -webkit-user-select:none;user-select:none;touch-action:manipulation}
   .pad button:active{background:var(--surface-2)}
 
-  .colofoot{max-width:1180px;margin:36px auto 0;padding:18px 0 0;border-top:1px solid var(--rule);
+  .colofoot{max-width:1400px;margin:36px auto 0;padding:18px 0 0;border-top:1px solid var(--rule);
     display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
     font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
   .colofoot .studio{color:var(--muted);display:flex;align-items:center;gap:14px}
@@ -212,7 +219,7 @@
 
   /* ---------- classifica ---------- */
   /* Va indirizzata per id: `.board` è anche il contenitore del campo di gioco. */
-  #board{max-width:1180px;margin:30px auto 0;background:var(--surface);
+  #board{max-width:1400px;margin:30px auto 0;background:var(--surface);
          border:1px solid var(--rule-soft);border-radius:3px;padding:18px 20px}
   .board-head{display:flex;align-items:baseline;justify-content:space-between;
               gap:16px;flex-wrap:wrap;margin-bottom:12px}
@@ -740,9 +747,12 @@
       availW = window.innerWidth - 20;
       maxH = Math.max(230, vh - riservato);
     } else {
-      // le due colonne laterali sono 210 + 210 con 22 di gola: se il campo
-      // supera i 640 il riquadro di destra va a capo e finisce sotto il foglio
-      availW = Math.min(640, window.innerWidth - 520);
+      /* Le due colonne laterali sono 210 + 210 con 22 di gola: oltre lo spazio
+         che resta, il riquadro di destra va a capo e finisce sotto il foglio.
+         Il foglio adesso è largo 1400 invece di 1180, quindi il campo può
+         arrivare a 860 invece di 640. La griglia resta 19 × 13: a crescere è
+         la cella, quindi la foliazione si legge e il gioco non cambia. */
+      availW = Math.min(860, window.innerWidth - 520);
       maxH = Math.max(300, window.innerHeight - h(document.querySelector(".masthead")) - 120);
     }
     C = Math.max(13, Math.floor(Math.min(availW / COLS, maxH / ROWS)));
