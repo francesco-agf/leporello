@@ -174,8 +174,9 @@ const ok = (nome, cond, extra) => {
     scheda: document.getElementById('altroGioco').getAttribute('href')
   }));
   ok('13. il ponte', t13.sala === 'https://francesco-agf.github.io/' &&
-      t13.piede.length === 3 && /baseline/.test(t13.piede.join()) && /refusi/.test(t13.piede.join()) &&
-      /baseline|refusi/.test(t13.scheda || ''), t13);
+      t13.piede.length === 4 && /baseline/.test(t13.piede.join()) && /refusi/.test(t13.piede.join()) &&
+      /tiratura/.test(t13.piede.join()) &&
+      /baseline|refusi|tiratura/.test(t13.scheda || ''), t13);
 
   // 14. niente selezione del testo sul campo
   const t14 = await page.evaluate(() => {
