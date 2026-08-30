@@ -564,7 +564,7 @@
   };
   const CAMPIONE_KEYS = ["registro", "sovrastampa", "rifilo", "pieno", "tinta"];
   const VITA_CAMPIONE = 9000;   // quanto resta sul piano prima di sparire
-  const TINTA_MINIMA = 2600;    // anche i campioni istantanei tingono per un po'
+  const TINTA_MINIMA = 4200;    // anche i campioni istantanei tingono per un po'
   const OGNI_CAMPIONE = 5;      // uno ogni cinque sfridi
 
   const PIANO = "#DBD7CC";
@@ -1105,7 +1105,7 @@
     if (!tinta) return 0;
     const resta = tinta.fino - performance.now();
     if (resta <= 0) return 0;
-    return Math.min(1, resta / 420) * 0.66;
+    return Math.min(1, resta / 500) * 0.74;
   }
   /* La foliazione deve restare leggibile anche su una striscia tinta di nero */
   function coloreNumeri(f){
