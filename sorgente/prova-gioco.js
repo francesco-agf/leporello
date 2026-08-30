@@ -113,7 +113,9 @@ const ok = (nome, cond, extra) => {
     L.passo(1);
     return L.stato();
   });
-  ok('7. la tinta regala una segnatura', t7.segnature === 1 && t7.facciate === 8, t7);
+  /* Una segnatura sono **sei** facciate dal 30.08.2026, non otto: si sale di
+     formato più spesso, così i formati in mezzo si vedono passare. */
+  ok('7. la tinta regala una segnatura', t7.segnature === 1 && t7.facciate === 6, t7);
 
   // 8. la sovrastampa raddoppia
   const t8 = await page.evaluate(() => {

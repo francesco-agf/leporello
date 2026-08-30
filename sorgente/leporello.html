@@ -74,7 +74,7 @@
   /* il formato di piega, in evidenza */
   .formato-riga{font-family:var(--display);font-weight:700;font-size:25px;line-height:1.1;
                 margin:0;letter-spacing:.01em}
-  /* la segnatura in corso: otto facciate */
+  /* la segnatura in corso: sei facciate */
   .segn{display:flex;gap:5px;margin-top:3px}
   .segn i{flex:1;height:9px;border:1px solid var(--muted-2);border-radius:1px;background:transparent}
   .segn i.fatta{background:var(--paper);border-color:var(--paper)}
@@ -141,11 +141,16 @@
           color:var(--muted);background:transparent;border:1px solid var(--rule);
           border-radius:2px;padding:7px 9px;cursor:pointer}
 
+  /* I tasti a schermo: una forma sola per tutta la sala. Dove il tasto porta un
+     segno (una freccia) sta in tondo grande; dove porta una parola ("Salta",
+     "Stampa") prende la classe `parola` e va in mono maiuscoletto — che e' la
+     differenza fra un simbolo e un'etichetta, non fra due giochi. */
   .pad{display:none;gap:8px;width:100%;max-width:560px}
   .pad button{flex:1;background:var(--surface);border:1px solid var(--rule);color:var(--paper);
-    border-radius:3px;padding:16px 0;font-size:20px;font-family:var(--ui);cursor:pointer;
+    border-radius:3px;padding:15px 0;font-size:19px;font-family:var(--ui);cursor:pointer;line-height:1;
     -webkit-user-select:none;user-select:none;touch-action:manipulation}
   .pad button:active{background:var(--surface-2)}
+  .pad .parola{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
 
   .colofoot{max-width:1400px;margin:36px auto 0;padding:18px 0 0;border-top:1px solid var(--rule);
     display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
@@ -399,7 +404,7 @@
       <div class="panel">
         <div class="panel-label"><span>Formato di piega</span><span id="formatoN">1</span></div>
         <p class="formato-riga" id="formatoNome">Piega semplice</p>
-        <p class="nota">Ogni <b>otto facciate</b> chiudi una segnatura: si sale di formato,
+        <p class="nota">Ogni <b>sei facciate</b> chiudi una segnatura: si sale di formato,
         la piegatrice va più svelta e resta in campo un <b>punto metallico</b> in più.</p>
       </div>
       <div class="panel">
@@ -562,7 +567,7 @@
     che fermano la corsa, e il campione ciano ti fa passare attraverso tutte e due.</p>
 
     <h3>Le segnature</h3>
-    <p>Ogni <b>otto facciate</b> chiudi una segnatura: sedici pagine. La piegatrice dà il
+    <p>Ogni <b>sei facciate</b> chiudi una segnatura, e con lei sale il formato di piega: il passo si fa più svelto e sul piano compare lo <b>schema</b> di quella piega. La piegatrice dà il
     colpo, salgono i punti, si sale di <b>formato di piega</b> e resta sul piano un punto
     metallico in più. Dal quinto formato compaiono anche le <b>cordonature</b>: linee
     tratteggiate che nel foglio vero sono i segni della piega, e qui sono muri.</p>
@@ -601,7 +606,7 @@
       <tr><td><span class="pastiglia" style="background:#17191D"></span><b>Pieno</b></td>
           <td>sei secondi al rallentatore: il pieno asciuga lento</td></tr>
       <tr><td><span class="pastiglia" style="background:#00C389"></span><b>Tinta piatta</b></td>
-          <td>raro: cento punti secchi e una segnatura regalata, otto facciate in un colpo</td></tr>
+          <td>raro: cento punti secchi e una segnatura regalata, sei facciate in un colpo</td></tr>
     </table>
 
     <h3>Punteggio</h3>
@@ -645,7 +650,7 @@
      LEPORELLO — il serpente di carta di Arti Grafiche Fimognari.
      Un solo file, nessuna dipendenza a parte i caratteri da Google Fonts.
      L'idea: non è un serpente, è una striscia di carta che si piega. Ogni
-     cambio di direzione è una piega vera, e si vede; ogni otto facciate si
+     cambio di direzione è una piega vera, e si vede; ogni sei facciate si
      chiude una segnatura. Più mangi, più è difficile non toccarti — che è
      il problema di chiunque progetti uno stampato piegato.
      ==================================================================== */
@@ -678,21 +683,35 @@
     COLS = c; ROWS = r;
     return true;
   }
-  const PER_SEGNATURA = 8;      // otto facciate: una segnatura, sedici pagine
+  /* Sei facciate per segnatura, non otto: con otto si arrivava al decimo
+     formato dopo settantadue sfridi, e i formati in mezzo passavano senza
+     che uno se ne accorgesse. */
+  const PER_SEGNATURA = 6;
 
   /* I formati di piega, che qui fanno da livelli. Sono quelli veri, nell'ordine
      in cui li impara chi sta in legatoria. */
+  /* I formati di piega fanno da livelli, e adesso si distinguono in due modi.
+
+     Il **passo**: prima calava di pochi millesimi per volta (172 → 94 in dieci
+     scalini) e fra un formato e l'altro non si sentiva niente. Adesso cala di
+     circa un decimo a ogni formato: si sente sotto le dita.
+
+     Lo **schema**: ogni formato di piega ha il suo disegno vero, e quel disegno
+     compare in filigrana sul piano di montaggio. `pannelli` sono le facciate,
+     `monte` quali pieghe vanno in fuori (tratteggiate, come su un montaggio),
+     `croce` se la piega e' anche in orizzontale. Sono gli schemi che si trovano
+     su qualunque tabella di piegatura. */
   const FORMATI = [
-    { nome:"Piega semplice", passo:172 },
-    { nome:"Portafoglio",    passo:161 },
-    { nome:"Finestra",       passo:150 },
-    { nome:"Piega a Z",      passo:140 },
-    { nome:"Piega a croce",  passo:131 },
-    { nome:"Fisarmonica",    passo:122 },
-    { nome:"Mulino",         passo:114 },
-    { nome:"Parallela",      passo:107 },
-    { nome:"Leporello",      passo:100 },
-    { nome:"Fuori formato",  passo:94  }
+    { nome:"Piega semplice", passo:176, pannelli:2, monte:[],     croce:false },
+    { nome:"Portafoglio",    passo:160, pannelli:3, monte:[],     croce:false },
+    { nome:"Finestra",       passo:146, pannelli:4, monte:[1],    croce:false },
+    { nome:"Piega a Z",      passo:133, pannelli:3, monte:[1],    croce:false },
+    { nome:"Piega a croce",  passo:121, pannelli:2, monte:[],     croce:true  },
+    { nome:"Fisarmonica",    passo:110, pannelli:5, monte:[0,2],  croce:false },
+    { nome:"Mulino",         passo:100, pannelli:4, monte:[1],    croce:true  },
+    { nome:"Parallela",      passo:91,  pannelli:4, monte:[],     croce:false },
+    { nome:"Leporello",      passo:83,  pannelli:8, monte:[0,2,4,6], croce:false },
+    { nome:"Fuori formato",  passo:76,  pannelli:6, monte:[1,3],  croce:true  }
   ];
 
   /* I campioni colore. Cartoncini che cadono sul piano, restano poco e vanno
@@ -1511,8 +1530,53 @@ const MARK_PATHS = ["M 105 22 C 106 24 107 26 107 28 C 107 29 106 31 106 32 L 10
     }
     // la filigrana: la stessa carta di tutti i giochi della sala
     filigrana(ctx, W / 2, H / 2, H * 0.46, .05, "#17191D");
+    disegnaSchema();
     // i sigilli già impressi restano sul piano per tutta la partita
     for (const b of bolli) disegnaSigillo(ctx, cellaX(b.x) + C / 2, cellaY(b.y) + C / 2, C * 1.1, .55, false);
+  }
+
+
+  /* Lo schema di piega del formato in corso, disegnato sul piano di montaggio
+     come su una tabella di piegatura: le facciate, le pieghe a valle continue e
+     quelle a monte tratteggiate. Cambia a ogni formato, quindi si vede a colpo
+     d'occhio di essere saliti — che prima era la cosa che mancava. */
+  function disegnaSchema(){
+    const f = FORMATI[Math.min(FORMATI.length, formato) - 1];
+    if (!f) return;
+    const alto = Math.min(H * .16, C * 2.1);
+    const largo = Math.min(W * .30, alto * (f.croce ? 2.0 : 2.6));
+    const x0 = W - largo - Math.max(14, C * .8);
+    const y0 = Math.max(14, C * .8);
+    const c = ctx;
+    c.save();
+    c.globalAlpha = .5;
+    c.strokeStyle = "rgba(23,25,29,.28)";
+    c.lineWidth = 1;
+    c.setLineDash([]);
+    c.strokeRect(x0 + .5, y0 + .5, largo, alto);
+    const passo = largo / f.pannelli;
+    for (let i = 1; i < f.pannelli; i++){
+      const monte = f.monte.indexOf(i - 1) !== -1;
+      c.setLineDash(monte ? [4, 3] : []);
+      c.beginPath();
+      c.moveTo(x0 + i * passo + .5, y0);
+      c.lineTo(x0 + i * passo + .5, y0 + alto);
+      c.stroke();
+    }
+    if (f.croce){
+      c.setLineDash([]);
+      c.beginPath();
+      c.moveTo(x0, y0 + alto / 2 + .5);
+      c.lineTo(x0 + largo, y0 + alto / 2 + .5);
+      c.stroke();
+    }
+    c.setLineDash([]);
+    c.globalAlpha = .42;
+    c.fillStyle = "#17191D";
+    c.font = '500 ' + Math.max(7, Math.round(C * .26)) + 'px "IBM Plex Mono", monospace';
+    c.textAlign = "right"; c.textBaseline = "top";
+    c.fillText(f.nome.toUpperCase(), x0 + largo, y0 + alto + 5);
+    c.restore();
   }
 
   /* La banda della piegatrice: quanto manca e da che parte piega. */
