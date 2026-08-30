@@ -118,6 +118,9 @@
   .btn.rosso{background:transparent;color:var(--danger);border-color:rgba(255,90,70,.45)}
   .btn.rosso:hover{border-color:var(--danger)}
   .btn[disabled]{opacity:.55;cursor:default}
+  .btn.sm{padding:8px 12px;font-size:10.5px}
+  .scarica{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
+  .scarica-nota{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--muted-2);margin:0;width:100%}
 
   .hud-strip{display:none;width:100%;max-width:560px;padding:0 2px 6px}
   .hs-row{display:flex;align-items:center;gap:10px;justify-content:space-between}
@@ -304,6 +307,10 @@
   body.campo-stretto .btn{padding:8px 11px;font-size:10.5px}
   body.campo-stretto .altro{padding:8px 11px}
   body.campo-stretto .altro .nome{font-size:17px}
+  body.campo-minimo .altro{display:none}
+  body.campo-minimo .ov-kicker{display:none}
+  body.campo-minimo .rivelazione{font-size:11px;line-height:1.45}
+  body.campo-minimo .overlay{gap:4px;padding:9px 9px}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -372,6 +379,10 @@
           <p class="ov-score" id="ovScore" hidden>0</p>
           <p class="ov-meta" id="ovMeta" hidden></p>
           <p class="rivelazione" id="rivelazione" hidden></p>
+          <div class="scarica" id="scarica" hidden>
+            <button class="btn ghost sm" id="dlStesa">Scarica il pieghevole</button>
+            <p class="scarica-nota" id="scaricaNota" hidden></p>
+          </div>
           <div class="signup" id="signup" hidden>
             <p class="signup-msg" id="signupMsg"></p>
             <div class="signup-row" id="signupEdit" hidden>
@@ -483,6 +494,22 @@
       <tr><td>5 · 6 · 7</td><td>Piega a croce, fisarmonica, mulino — arrivano le cordonature</td></tr>
       <tr><td>8 · 9 · 10</td><td>Parallela, leporello, fuori formato</td></tr>
     </table>
+
+    <h3>La piegatrice impazzita</h3>
+    <p>Al <b>quinto formato</b> la macchina prende il comando, e poi di nuovo al settimo e
+    al nono. Per un tratto non decidi più tu tutte le pieghe: ogni tre passi la piegatrice
+    <b>ti impone la sua</b>, e te lo dice tre passi prima con la freccia in cima al piano —
+    ↻ a destra, ↺ a sinistra. Tu decidi solo dove trovarti quando arriva il colpo, e di non
+    finirti addosso.</p>
+    <p>Al nono formato picchia ogni due passi. Chi la porta a casa si prende il
+    <b>sigillo</b>: la <i>f</i> della casa impressa a secco sul piano, che resta lì per tutta
+    la partita, si conta in classifica e finisce stampata sul pieghevole.</p>
+
+    <h3>Il pieghevole steso</h3>
+    <p>A fine partita la striscia si srotola e diventa un pieghevole vero, da scaricare:
+    la foliazione in ordine, il recto e il verso che si alternano di tono, le pieghe dove le
+    hai fatte davvero e i <b>colori dei campioni</b> stampati sulle facciate dove li hai
+    presi. Due partite non producono mai lo stesso stampato.</p>
 
     <h3>I campioni colore</h3>
     <p>Ogni tanto sul piano cade un <b>campione</b>: un cartoncino colorato che resta poco
@@ -626,6 +653,9 @@
   const rivelazione = document.getElementById("rivelazione");
   const startBtn = document.getElementById("startBtn");
   const copyBtn = document.getElementById("copyBtn");
+  const scaricaBox = document.getElementById("scarica");
+  const dlStesa = document.getElementById("dlStesa");
+  const scaricaNota = document.getElementById("scaricaNota");
   const giveUpBtn = document.getElementById("giveUpBtn");
   const pauseBtn = document.getElementById("pauseBtn");
   const soundBtn = document.getElementById("soundBtn");
@@ -661,6 +691,8 @@
   let acc = 0, alfa = 0, last = 0, raf = null;
   let scossa = 0, lampo = 0, lampoColore = "#FF5A46";
   let causaFine = "", fineA = 0;
+  let piegatriceOn = null;    // il guasto in corso, quando la macchina comanda
+  let sigilli = 0, bolli = [], sigilloVivo = null;
 
   try { record = parseInt(localStorage.getItem("leporello.record") || "0", 10) || 0; } catch(e){}
 
@@ -708,10 +740,15 @@
   function adattaScheda(){
     if (!overlay || overlay.hidden) return;
     const c = document.body.classList;
-    c.remove("campo-basso"); c.remove("campo-stretto");
-    if (overlay.scrollHeight > overlay.clientHeight + 1){
+    c.remove("campo-basso"); c.remove("campo-stretto"); c.remove("campo-minimo");
+    const stretto = function(){ return overlay.scrollHeight > overlay.clientHeight + 1; };
+    if (stretto()){
       c.add("campo-basso");
-      if (overlay.scrollHeight > overlay.clientHeight + 1) c.add("campo-stretto");
+      if (stretto()){
+        c.add("campo-stretto");
+        // ultimo grado: resta solo quello che serve a giocare ancora
+        if (stretto()) c.add("campo-minimo");
+      }
     }
   }
   new MutationObserver(adattaScheda).observe(overlay,
@@ -810,6 +847,47 @@
                r:[.9,.7,1,.75,.95,.7,.85], rot:.3, t:0 };
   }
 
+
+  /* ---------- il marchio di casa ----------
+     La stessa carta in tutti e quattro i giochi: il monogramma in filigrana,
+     appena visibile in controluce come in un foglio vero. E quando si batte il
+     guasto di macchina, lo stesso segno torna — ma impresso a secco, in rilievo.
+     Uno sta sempre lì e non si guadagna; l'altro si guadagna e resta sul foglio
+     per tutta la partita. */
+const MARK_PATHS = ["M 105 22 C 106 24 107 26 107 28 C 107 29 106 31 106 32 L 105 34 C 104 36 101 38 98 38 C 96 38 95 37 94 37 C 93 37 92 36 92 35 C 91 35 91 34 90 33 C 90 33 90 32 90 32 L 90 31 C 90 29 90 27 92 25 C 93 23 94 21 94 19 C 94 15 92 13 90 12 C 87 11 85 11 82 11 C 76 11 71 13 67 18 C 63 23 61 31 61 41 L 61 52 C 61 54 61 57 60 59 C 60 61 59 62 59 63 C 59 64 58 65 57 66 C 55 67 55 68 54 68 C 54 68 53 68 51 69 C 51 69 51 69 51 69 L 85 69 L 85 70 L 61 70 L 61 151 L 61 145 C 61 146 61 146 61 146 C 61 146 61 147 62 147 C 62 148 62 148 63 149 C 63 149 64 150 65 150 C 66 150 67 151 69 151 C 75 151 78 151 79 151 L 79 152 L 31 152 L 31 151 L 38 151 C 40 151 41 150 42 150 C 43 150 44 149 44 149 C 45 149 45 148 45 148 C 46 147 46 147 46 146 C 46 146 46 146 46 146 L 46 70 L 31 70 L 31 69 C 34 69 36 69 38 68 C 40 67 41 66 42 65 C 43 64 44 63 45 61 C 45 60 46 59 46 58 C 46 57 46 56 46 54 C 46 53 46 52 46 52 L 46 52 L 46 52 C 46 50 47 48 47 46 C 47 43 48 40 49 37 C 49 35 50 32 51 31 C 52 29 53 27 55 26 C 58 21 62 18 67 14 C 72 11 78 10 83 10 C 87 10 91 10 94 12 C 97 13 99 14 101 16 C 103 18 104 20 105 22 ", "M 101 135 C 103 137 104 139 104 142 C 104 145 103 147 101 149 C 100 150 97 151 95 151 C 92 151 90 150 88 149 C 86 147 85 145 85 142 C 85 139 86 137 88 135 C 90 133 92 132 95 132 C 97 132 100 133 101 135 "];
+  const MARK_BOX = [130, 168];
+  let markPath = null;
+  try { if (window.Path2D) markPath = MARK_PATHS.map(function(d){ return new Path2D(d); }); }
+  catch(e){ markPath = null; }
+
+  function filigrana(c, cx, cy, altezza, alfa, colore){
+    if (!markPath) return;
+    c.save();
+    c.globalAlpha = alfa;
+    c.fillStyle = colore;
+    const k = altezza / MARK_BOX[1];
+    c.translate(cx - (MARK_BOX[0] * k) / 2, cy - altezza / 2);
+    c.scale(k, k);
+    for (const p of markPath) c.fill(p);
+    c.restore();
+  }
+
+  /* Il sigillo: una f impressa a secco. Su un foglio bianco un'impressione a
+     secco non è inchiostro, è un rilievo — si vede solo perché ha un'ombra da
+     una parte e una luce dall'altra. Quindi si disegna due volte, sfalsata. */
+  function disegnaSigillo(c, cx, cy, raggio, forza, chiaro){
+    if (!markPath) return;
+    const d = Math.max(1, raggio * 0.045);
+    c.save();
+    c.globalAlpha = forza * (chiaro ? .5 : .34);
+    c.strokeStyle = chiaro ? "rgba(237,234,227,.9)" : "rgba(23,25,29,.55)";
+    c.lineWidth = Math.max(1, raggio * 0.05);
+    c.beginPath(); c.arc(cx, cy, raggio, 0, 6.2832); c.stroke();
+    c.restore();
+    filigrana(c, cx + d, cy + d, raggio * 1.25, forza * (chiaro ? .30 : .20), chiaro ? "#000" : "#0E1116");
+    filigrana(c, cx - d, cy - d, raggio * 1.25, forza * (chiaro ? .55 : .30), chiaro ? "#EDEAE3" : "#FFFFFF");
+  }
+
   function nuovoSfrido(){
     const c = cellaLibera(2);
     if (!c){ sfrido = null; return; }
@@ -841,6 +919,7 @@
     rivelazione.hidden = true;
     ovScore.hidden = true; ovMeta.hidden = true; copyBtn.hidden = true;
     giveUpBtn.hidden = true;
+    if (scaricaBox) scaricaBox.hidden = true;
     document.getElementById("altroGioco").hidden = true;
     ovBody.hidden = false; ovTitle.hidden = false;
     punti = 0; facciate = 0; segnature = 0; formato = 1;
@@ -857,6 +936,7 @@
     sfrido = null; nuovoSfrido();
     acc = 0; alfa = 0; toast = null; scossa = 0; lampo = 0;
     causaFine = "";
+    piegatriceOn = null; sigilli = 0; bolli = []; sigilloVivo = null;
     fase = "play";
     overlay.hidden = true;
     aggiornaHud();
@@ -877,6 +957,9 @@
     const cfg = CAMPIONI[k];
     campioniPresi++;
     segna(40 * formato);
+    // la facciata su cui l'hai preso resta stampata di quel colore: si rivede
+    // nel pieghevole steso a fine partita
+    if (corpo[0]) corpo[0].colore = cfg.colore;
     // tutta la striscia si tinge del colore del campione, come un foglio che
     // passa in macchina: anche i campioni istantanei lasciano il segno
     tinta = { colore: cfg.colore,
@@ -909,6 +992,53 @@
     aggiornaHud();
   }
 
+
+  /* ---------- LA PIEGATRICE IMPAZZITA ----------
+     Dal quinto formato la macchina prende il comando. Per un tratto non decidi
+     più tu tutte le pieghe: ogni tre passi la piegatrice **ti impone** la sua,
+     e te lo dice tre passi prima con la freccia in cima al piano. Tu decidi solo
+     dove trovarti quando arriva il colpo — e non addosso a te stesso.
+
+     Arriva al formato 5, 7 e 9, e ogni volta dura di più e picchia più fitto:
+     è il modo in cui i formati cambiano la regola invece di cambiare solo la
+     velocità. Chi la porta a casa si prende il sigillo. */
+  const PIEGATRICE_A = { 5: { passi: 54, ogni: 3 }, 7: { passi: 66, ogni: 3 }, 9: { passi: 78, ogni: 2 } };
+
+  function chiamaPiegatrice(f){
+    const cfg = PIEGATRICE_A[f];
+    if (!cfg || piegatriceOn || fase !== "play") return;
+    piegatriceOn = { restano: cfg.passi, ogni: cfg.ogni, prossima: cfg.ogni,
+                     verso: Math.random() > .5 ? 1 : -1 };
+    mostraToast("LA PIEGATRICE IMPAZZISCE", true);
+    lampo = 1; lampoColore = "#C62F16";
+    scossa = 1;
+    piegatrice();
+    beep(150, .3, .06);
+    setTimeout(function(){ beep(120, .34, .05); }, 160);
+  }
+
+  /* La piega imposta: novanta gradi nel verso che la macchina ha annunciato. */
+  function piegaImposta(){
+    const v = piegatriceOn.verso;
+    dir = v > 0 ? { x: -dir.y, y: dir.x } : { x: dir.y, y: -dir.x };
+    coda.length = 0;                 // quello che avevi in canna non conta più
+    pieghe++;
+    piegatrice();
+    schizza(corpo[0].x, corpo[0].y, "#C62F16", 7);
+  }
+
+  function imprimiSigillo(){
+    sigilli++;
+    const t = corpo[0] || { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) };
+    bolli.push({ x: t.x, y: t.y });
+    sigilloVivo = { x: t.x, y: t.y, t: 0 };
+    mostraToast("SIGILLO", true);
+    lampo = 1; lampoColore = "#F0B429";
+    beep(420, .16, .05);
+    setTimeout(function(){ beep(160, .5, .07); }, 90);
+    aggiornaHud();
+  }
+
   function controllaSegnatura(silenziosa){
     const nuove = Math.floor(facciate / PER_SEGNATURA);
     while (segnature < nuove){
@@ -923,6 +1053,7 @@
         muri = nuoviMuri;
         if (cresciuto && formato >= 5) mostraToast("Nuove cordonature", true);
       }
+      if (formato !== prima && PIEGATRICE_A[formato]) chiamaPiegatrice(formato);
       if (!silenziosa) piegatrice();
       if (sfrido && !libera(sfrido.x, sfrido.y)) nuovoSfrido();
     }
@@ -947,6 +1078,20 @@
       if (!(d.x === -dir.x && d.y === -dir.y)) {
         if (d.x !== dir.x || d.y !== dir.y){ pieghe++; cordonatura(); }
         dir = d;
+      }
+    }
+    // la piegatrice, se ha preso il comando, piega dopo di te: la sua vince
+    if (piegatriceOn){
+      piegatriceOn.prossima--;
+      if (piegatriceOn.prossima <= 0){
+        piegaImposta();
+        piegatriceOn.prossima = piegatriceOn.ogni;
+        piegatriceOn.verso = Math.random() > .5 ? 1 : -1;
+      }
+      piegatriceOn.restano--;
+      if (piegatriceOn.restano <= 0){
+        piegatriceOn = null;
+        imprimiSigillo();
       }
     }
     const testa = corpo[0];
@@ -1002,6 +1147,7 @@
       ovScore.hidden = true; ovMeta.hidden = true; rivelazione.hidden = true;
       copyBtn.hidden = true; signup.hidden = true; startName.hidden = true;
       document.getElementById("altroGioco").hidden = true;
+      if (scaricaBox) scaricaBox.hidden = true;
       giveUpBtn.hidden = false;
       startBtn.textContent = "Riprendi";
       overlay.hidden = false;
@@ -1051,6 +1197,7 @@
       ", con <b>" + pieghe + "</b> " + (pieghe === 1 ? "piega" : "pieghe") + ".";
     startBtn.textContent = "Un altro foglio";
     copyBtn.hidden = false; copyBtn.textContent = "Copia risultato";
+    if (scaricaBox) scaricaBox.hidden = corpo.length < 3;
     giveUpBtn.hidden = true;
     startName.hidden = true;
     mostraAltroGioco();
@@ -1131,6 +1278,7 @@
     if (scossa > 0) scossa = Math.max(0, scossa - dt / 340);
     if (lampo > 0) lampo = Math.max(0, lampo - dt / 380);
     if (toast){ toast.t += dt; if (toast.t > 1700) toast = null; }
+    if (sigilloVivo){ sigilloVivo.t += dt; if (sigilloVivo.t > 1500) sigilloVivo = null; }
     for (let i = coriandoli.length - 1; i >= 0; i--){
       const p = coriandoli[i];
       p.x += p.vx * dt; p.y += p.vy * dt; p.vy += .0012 * dt; p.rot += p.vr * dt / 16;
@@ -1223,6 +1371,42 @@
       ctx.stroke();
       ctx.beginPath(); ctx.arc(a[0], a[1], s * .58, 0, 6.283); ctx.stroke();
     }
+    // la filigrana: la stessa carta di tutti i giochi della sala
+    filigrana(ctx, W / 2, H / 2, H * 0.46, .05, "#17191D");
+    // i sigilli già impressi restano sul piano per tutta la partita
+    for (const b of bolli) disegnaSigillo(ctx, cellaX(b.x) + C / 2, cellaY(b.y) + C / 2, C * 1.1, .55, false);
+  }
+
+  /* La banda della piegatrice: quanto manca e da che parte piega. */
+  function disegnaPiegatrice(){
+    if (!piegatriceOn) return;
+    const alt = Math.max(20, C * 0.86);
+    ctx.save();
+    ctx.fillStyle = "rgba(198,47,22,.10)";
+    ctx.fillRect(0, 0, W, alt);
+    ctx.fillStyle = "#C62F16";
+    ctx.font = "600 " + Math.round(alt * .34) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText("PIEGATRICE", C * .35, alt / 2);
+    // i passi che mancano alla prossima piega, come i punti di una cordonatura
+    const q = Math.max(3, C * .16);
+    for (let i = 0; i < piegatriceOn.ogni; i++){
+      const x = W / 2 - (piegatriceOn.ogni * q * 2.2) / 2 + i * q * 2.2;
+      ctx.globalAlpha = i < piegatriceOn.prossima ? 1 : .22;
+      ctx.fillRect(x, alt / 2 - q / 2, q, q);
+    }
+    ctx.globalAlpha = 1;
+    // la freccia del verso, che pulsa quando manca un passo solo
+    const grande = piegatriceOn.prossima <= 1;
+    ctx.font = "600 " + Math.round(alt * (grande ? .62 : .44)) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "right";
+    ctx.fillText(piegatriceOn.verso > 0 ? "↻" : "↺", W - C * .35, alt / 2);
+    // quanto dura ancora
+    ctx.globalAlpha = .5;
+    ctx.font = "500 " + Math.round(alt * .26) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "center";
+    ctx.fillText(piegatriceOn.restano + " PASSI", W / 2, alt * 1.42);
+    ctx.restore();
   }
 
   function disegnaMuri(){
@@ -1501,6 +1685,13 @@
     disegnaSfrido();
     disegnaCampione();
     if (corpo.length) disegnaStriscia();
+    disegnaPiegatrice();
+    if (sigilloVivo){
+      const k = Math.min(1, sigilloVivo.t / 260);
+      const via = Math.max(0, 1 - Math.max(0, sigilloVivo.t - 900) / 600);
+      disegnaSigillo(ctx, cellaX(sigilloVivo.x) + C / 2, cellaY(sigilloVivo.y) + C / 2,
+                     C * (2.4 - 1.3 * k), via, false);
+    }
     disegnaCoriandoli();
     disegnaToast();
     ctx.restore();
@@ -1515,9 +1706,152 @@
   /* ---------- hud ---------- */
   function fmt(n){ return Math.round(n).toLocaleString("it-IT", { useGrouping: "always" }); }
   function plur(n, uno, molti){ return n + " " + (n === 1 ? uno : molti); }
+
+  /* ---------- IL PIEGHEVOLE STESO ----------
+     Il gioco non produce un punteggio: produce un pezzo di carta. A fine
+     partita la striscia si srotola e diventa un pieghevole vero — la foliazione
+     in ordine, il recto e il verso che si alternano di tono, le pieghe dove le
+     hai fatte davvero, e i colori dei campioni stampati sulle facciate dove li
+     hai presi. Sotto, il colophon: chi, quanto, quando.
+
+     È l'unico dei quattro giochi in cui l'oggetto finale *è* la partita. */
+  const FOGLIO_L = 1400;
+  const PER_RIGA = 22;
+
+  function disegnaStesa(c){
+    const pieghevole = corpo.slice().reverse();     // dalla coda alla testa
+    const n = Math.max(1, pieghevole.length);
+    const righe = Math.ceil(n / PER_RIGA);
+    const pw = 46, ph = 132, gapRiga = 34;
+    const alto = 250 + righe * ph + (righe - 1) * gapRiga + 96;
+    c.canvas.width = FOGLIO_L; c.canvas.height = alto;
+
+    // la carta
+    c.fillStyle = "#F7F4EC"; c.fillRect(0, 0, FOGLIO_L, alto);
+    filigrana(c, FOGLIO_L / 2, alto / 2, alto * .62, .035, "#17191D");
+
+    // la testata
+    c.fillStyle = "#17191D";
+    c.font = '900 62px "Bodoni Moda", Didot, Georgia, serif';
+    c.textAlign = "left"; c.textBaseline = "alphabetic";
+    c.fillText("Leporello", 74, 106);
+    const larg = c.measureText("Leporello").width;
+    c.fillStyle = "#F0B429";
+    c.beginPath(); c.arc(74 + larg + 15, 98, 9, 0, 6.2832); c.fill();
+
+    c.fillStyle = "#6B6F73";
+    c.font = '400 21px "Bodoni Moda", Didot, Georgia, serif';
+    c.fillText("il pieghevole steso · " + (nomeSalvato() || "senza nome"), 74, 140);
+
+    c.fillStyle = "#8A8F94";
+    c.font = '500 13px "IBM Plex Mono", monospace';
+    c.fillText(("Formato " + formato + " · " + FORMATI[Math.min(FORMATI.length, formato) - 1].nome +
+                " · " + plur(segnature, "segnatura", "segnature")).toUpperCase(), 74, 176);
+
+    // il punteggio, a destra, in cifre grandi
+    c.textAlign = "right";
+    c.fillStyle = "#17191D";
+    c.font = '600 58px "IBM Plex Mono", monospace';
+    c.fillText(fmt(punti), FOGLIO_L - 74, 118);
+    c.fillStyle = "#8A8F94";
+    c.font = '500 12px "IBM Plex Mono", monospace';
+    c.fillText("PUNTI", FOGLIO_L - 74, 146);
+
+    // le facciate, riga per riga
+    for (let r = 0; r < righe; r++){
+      const da = r * PER_RIGA, a = Math.min(n, da + PER_RIGA);
+      const quante = a - da;
+      const x0 = (FOGLIO_L - quante * pw) / 2;
+      const y0 = 250 + r * (ph + gapRiga);
+      for (let i = da; i < a; i++){
+        const seg = pieghevole[i];
+        const x = x0 + (i - da) * pw;
+        const recto = (i % 2) === 0;
+        c.fillStyle = recto ? "#FFFFFF" : "#EFEBE1";
+        c.fillRect(x, y0, pw, ph);
+        if (seg.colore){
+          c.fillStyle = seg.colore;
+          c.globalAlpha = .82;
+          c.fillRect(x, y0 + ph - 30, pw, 30);
+          c.globalAlpha = 1;
+        }
+        // la piega: una cordonatura tratteggiata sul lato destro
+        if (i < a - 1){
+          c.strokeStyle = "rgba(23,25,29,.30)";
+          c.lineWidth = 1; c.setLineDash([4, 4]);
+          c.beginPath(); c.moveTo(x + pw + .5, y0); c.lineTo(x + pw + .5, y0 + ph); c.stroke();
+          c.setLineDash([]);
+        }
+        // la foliazione
+        c.fillStyle = recto ? "#B9B3A6" : "#A9A296";
+        c.font = '500 11px "IBM Plex Mono", monospace';
+        c.textAlign = "center"; c.textBaseline = "alphabetic";
+        c.fillText(String(seg.n || (i + 1)), x + pw / 2, y0 + ph - 10);
+      }
+      // il filo del foglio, sopra e sotto
+      c.strokeStyle = "rgba(23,25,29,.22)"; c.lineWidth = 1;
+      c.strokeRect(x0 + .5, y0 + .5, quante * pw - 1, ph - 1);
+    }
+
+    // il sigillo, se l'hai guadagnato
+    if (sigilli){
+      disegnaSigillo(c, FOGLIO_L - 150, alto - 116, 44, 1, false);
+      c.fillStyle = "#8A8F94";
+      c.font = '500 11px "IBM Plex Mono", monospace';
+      c.textAlign = "center";
+      c.fillText(plur(sigilli, "SIGILLO", "SIGILLI").toUpperCase(), FOGLIO_L - 150, alto - 56);
+    }
+
+    // il colophon
+    c.strokeStyle = "rgba(23,25,29,.18)"; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(74, alto - 96.5); c.lineTo(FOGLIO_L - 74, alto - 96.5); c.stroke();
+    c.fillStyle = "#6B6F73";
+    c.font = '500 12px "IBM Plex Mono", monospace';
+    c.textAlign = "left"; c.textBaseline = "top";
+    c.fillText((facciate + " FACCIATE · " + pieghe + " PIEGHE · " +
+                plur(campioniPresi, "CAMPIONE", "CAMPIONI").toUpperCase() + " · " +
+                dayToLabel(dateKey())).toUpperCase(), 74, alto - 82);
+    c.fillText("ARTI GRAFICHE FIMOGNARI · DAL 1950 · " + SHARE_URL.replace("https://", "").toUpperCase(),
+               74, alto - 60);
+  }
+
+  window.__disegnaProva = disegnaStesa;   // serve solo al collaudo
+
+  /* ---- consegna del file ---- */
+  function scaricaBlob(blob, nome){
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = u; a.download = nome; a.rel = "noopener";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){
+      try { document.body.removeChild(a); } catch(e){}
+      URL.revokeObjectURL(u);
+    }, 5000);
+  }
+  function consegnaFoglio(blob, nome, btn, base){
+    const fine = function(msg){
+      btn.disabled = false; btn.textContent = msg;
+      setTimeout(function(){ btn.textContent = base; }, 2600);
+    };
+    try {
+      if (window.File && navigator.canShare){
+        const file = new File([blob], nome, { type: blob.type });
+        if (navigator.canShare({ files: [file] })){
+          navigator.share({ files: [file], title: "Leporello", text: INVITO })
+            .then(function(){ fine("Fatto"); },
+                  function(){ scaricaBlob(blob, nome); fine("Scaricato"); });
+          return;
+        }
+      }
+    } catch(e){}
+    scaricaBlob(blob, nome);
+    fine("Scaricato");
+  }
+
   function riassunto(){
     return formato + "º formato · " + plur(segnature, "segnatura", "segnature") +
-           " · " + facciate + " facciate · " + pieghe + " pieghe";
+           " · " + facciate + " facciate · " + pieghe + " pieghe" +
+           (sigilli ? " · " + plur(sigilli, "sigillo", "sigilli") : "");
   }
   function aggiornaBarra(){
     if (!effBarra) return;
@@ -1617,6 +1951,26 @@
   pauseBtn.addEventListener("click", function(){
     if (fase === "play" || fase === "pause") togglePausa();
   });
+  if (dlStesa) dlStesa.addEventListener("click", function(){
+    const base = dlStesa.dataset.base || dlStesa.textContent;
+    dlStesa.dataset.base = base;
+    dlStesa.disabled = true; dlStesa.textContent = "Stendo…";
+    setTimeout(function(){
+      try {
+        const cv2 = document.createElement("canvas");
+        disegnaStesa(cv2.getContext("2d"));
+        cv2.toBlob(function(b){
+          if (!b){ dlStesa.disabled = false; dlStesa.textContent = base; return; }
+          const chi = (nomeSalvato() || "leporello").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          consegnaFoglio(b, "leporello-" + chi + "-" + Math.round(punti) + ".jpg", dlStesa, base);
+        }, "image/jpeg", .92);
+      } catch(e){
+        dlStesa.disabled = false; dlStesa.textContent = base;
+        if (scaricaNota){ scaricaNota.hidden = false; scaricaNota.textContent = "Non sono riuscito a stendere il foglio."; }
+      }
+    }, 30);
+  });
+
   giveUpBtn.addEventListener("click", function(){
     if (fase !== "pause") return;
     fase = "play";           // finePartita si aspetta una partita in corso
@@ -1633,6 +1987,7 @@
            barre + "  " + plur(segnature, "segnatura", "segnature") + "\n" +
            facciate + " facciate · " + pieghe + " pieghe · " +
            plur(campioniPresi, "campione", "campioni") + "\n" +
+           (sigilli ? plur(sigilli, "piegatrice domata", "piegatrici domate") + "\n" : "") +
            SHARE_URL;
   }
   copyBtn.addEventListener("click", function(){
@@ -1973,7 +2328,7 @@
           lines: Math.min(100000, facciate), quads: Math.min(25000, segnature),
           level: Math.max(1, Math.min(500, formato)),
           dati: { facciate: facciate, segnature: segnature, pieghe: pieghe,
-                  campioni: campioniPresi, causa: causaFine }
+                  campioni: campioniPresi, causa: causaFine, sigilli: sigilli }
         }
       });
       inviato = true;
@@ -2045,10 +2400,18 @@
                testa:{ x:corpo[0].x, y:corpo[0].y }, dir:{ x:dir.x, y:dir.y },
                sfrido:sfrido ? { x:sfrido.x, y:sfrido.y } : null,
                campione:campione ? { x:campione.x, y:campione.y, k:campione.k } : null,
-               causa:causaFine };
+               causa:causaFine, sigilli:sigilli,
+               piegatriceOn: !!piegatriceOn };
     },
     comincia: comincia,
     piega: piega,
+    chiamaPiegatrice: function(f){ chiamaPiegatrice(f || 5); },
+    piegatrice: function(){ return piegatriceOn ? { restano: piegatriceOn.restano,
+                            prossima: piegatriceOn.prossima, verso: piegatriceOn.verso } : null; },
+    finePiegatrice: function(){ if (piegatriceOn){ piegatriceOn = null; imprimiSigillo(); } },
+    stesa: function(){ const cv2 = document.createElement("canvas");
+                       disegnaStesa(cv2.getContext("2d"));
+                       return [cv2.width, cv2.height]; },
     passo: function(n){ for (let i = 0; i < (n || 1); i++) if (fase === "play") passo(); },
     mettiSfrido: function(x, y){ sfrido = { x:x, y:y, r:[.9,.8,1,.75,.95,.7,.85], rot:0, t:0 }; },
     mettiCampione: function(k, x, y){ campione = { x:x, y:y, k:k, nato:performance.now(), t:0 }; },
