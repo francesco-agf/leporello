@@ -9,8 +9,11 @@ Gioca: https://francesco-agf.github.io/leporello/
 ## La regola
 
 Mangi gli **sfridi** — i ritagli bianchi che avanzano dalla rifilatura — e ogni sfrido ti
-aggiunge una **facciata**. Si perde toccando sé stessi (*il foglio si strappa sulla piega*),
-uscendo dal foglio, finendo contro un **punto metallico** o attraversando una **cordonatura**.
+aggiunge una **facciata**.
+
+Il foglio **non ha bordi**: è una bobina, esci da una parte e rientri dall'altra, e uscire non
+costa niente. Si perde solo toccando sé stessi (*il foglio si strappa sulla piega*), finendo
+contro un **punto metallico** o attraversando una **cordonatura**.
 
 ## Le segnature
 
@@ -29,7 +32,7 @@ Ogni tanto cade un cartoncino colorato. Resta poco, ne vale uno per volta.
 
 | | | |
 |---|---|---|
-| **C** | Registro | otto secondi: esci da un bordo e rientri dall'altro |
+| **C** | In registro | otto secondi: passi attraverso cordonature e punti metallici |
 | **M** | Sovrastampa | dieci secondi a punti doppi, con la scia magenta |
 | **Y** | Rifilo | taglia tre facciate dalla coda e te le paga |
 | **K** | Pieno | sei secondi al rallentatore |
@@ -42,6 +45,13 @@ Ogni tanto cade un cartoncino colorato. Resta poco, ne vale uno per volta.
 - Segnatura chiusa — 200 × formato
 - Rifilo — 90 × formato, e tre facciate in meno
 - Sovrastampa — tutto quello che prendi vale il doppio
+
+## Il crocino, la foliazione, la tinta
+
+La testa della striscia è un **crocino di registro** nero. Ogni facciata porta il suo numero di
+pagina e recto e verso si alternano di tono. Quando raccogli un campione **tutta la striscia si
+tinge** di quel colore per qualche secondo, come un foglio che passa in macchina; i numeri di
+pagina passano al chiaro quando la tinta è scura.
 
 ## Comandi
 
