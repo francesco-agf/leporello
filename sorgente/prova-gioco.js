@@ -197,9 +197,11 @@ const ok = (nome, cond, extra) => {
     piede: Array.from(document.querySelectorAll('.colofoot a.tool')).map(a => a.getAttribute('href')),
     scheda: document.getElementById('altroGioco').getAttribute('href')
   }));
+  /* Cinque, non quattro: dal 31.08 nel piede c'e' anche la pagina privacy,
+     che il brief chiede come unico link di servizio oltre alla sala. */
   ok('13. il ponte', t13.sala === 'https://francesco-agf.github.io/' &&
-      t13.piede.length === 4 && /baseline/.test(t13.piede.join()) && /refusi/.test(t13.piede.join()) &&
-      /tiratura/.test(t13.piede.join()) &&
+      t13.piede.length === 5 && /baseline/.test(t13.piede.join()) && /refusi/.test(t13.piede.join()) &&
+      /tiratura/.test(t13.piede.join()) && /privacy/.test(t13.piede.join()) &&
       /baseline|refusi|tiratura/.test(t13.scheda || ''), t13);
 
   // 14. niente selezione del testo sul campo
