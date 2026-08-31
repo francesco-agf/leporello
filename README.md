@@ -77,6 +77,6 @@ In `sorgente/` ci sono anche i collaudi automatici. Istruzioni in
 
 ## Gli altri giochi
 
-**Baseline**, il tetris tipografico: https://francesco-agf.github.io/baseline/
+**Baseline**, il puzzle tipografico: https://francesco-agf.github.io/baseline/
 **Refusi**, lo sparatutto: https://francesco-agf.github.io/refusi/
 La sala giochi: https://francesco-agf.github.io/
