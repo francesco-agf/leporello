@@ -1,0 +1,37 @@
+{
+  "id": "/leporello/",
+  "name": "Leporello — il serpente di carta",
+  "short_name": "Leporello",
+  "description": "Un foglio che si piega su sé stesso: ogni boccone è una facciata, ogni curva una piega vera.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "/leporello/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080B0F",
+  "theme_color": "#080B0F",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "icons": [
+    {
+      "src": "/leporello/icona-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/leporello/icona-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/leporello/icona-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
