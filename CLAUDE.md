@@ -17,17 +17,18 @@ Va letto prima di cominciare — qui ci sono solo dieci righe di promemoria.
 | `AGF-leporello.md` | **questo gioco**: pieghe, campioni, piegatrice, pieghevole steso |
 | `AGF-sala.md` | classifiche, database, ponte fra i giochi, privacy |
 
-## Le cinque cose da non sbagliare
+## Le quattro cose da non sbagliare
 
-1. **Il sorgente si monta da due pezzi:** `sorgente/_lep_1.html` + `sorgente/_lep_2.html`.
-   Una modifica fatta solo sul file assemblato si perde al montaggio dopo. **È già
-   successo.**
-2. **`index.html` è generato.** Dopo il montaggio, `python3 sorgente/build.py`. Le prove
-   girano su `index.html`: senza il montaggio si prova la versione vecchia.
-3. **La segnatura è di sei facciate, non otto.** Il vecchio testo era rimasto anche nei
+1. **`index.html` è generato.** Si modifica `sorgente/leporello.html`, poi
+   `python3 sorgente/build.py`. Le prove girano su `index.html`: senza il montaggio si
+   prova la versione vecchia. È la trappola numero uno.
+   *(Storicamente il sorgente si montava da `_lep_1.html` + `_lep_2.html`: quei pezzi non
+   sono più nel repository. Se qualcuno li rimettesse, torna anche la vecchia trappola —
+   una modifica fatta solo sul file assemblato si perde al montaggio dopo.)*
+2. **La segnatura è di sei facciate, non otto.** Il vecchio testo era rimasto anche nei
    metadati.
-4. **Si scrive in italiano.** Funzioni, variabili, commenti, messaggi.
-5. **Supabase non si tocca** e **Aruba è in stand-by**.
+3. **Si scrive in italiano.** Funzioni, variabili, commenti, messaggi.
+4. **Supabase non si tocca** e **Aruba è in stand-by**.
 
 ## Le prove
 
